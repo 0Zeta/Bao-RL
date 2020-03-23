@@ -121,6 +121,9 @@ class HusBaoEnv(gym.Env):
             state[2, field] = 0
             state[3, field] = 0
         if state[row, field] > 1:
+            done, outcome = self._check_winning_condition()
+            if done:
+                return state
             self._execute_action(field + (8 if row == 1 else 0), state)
         return state
 
@@ -151,7 +154,7 @@ class HusBaoEnv(gym.Env):
             bool: done
             int: outcome
         """
-        if self.state[2:].max() <= 1:
+        if self.state[2:].max() <= 1 or self.state[2].max() == 0:
             return True, -1 if self._current_player == 0 else 1
         return False, 0
 
