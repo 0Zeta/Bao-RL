@@ -83,8 +83,8 @@ class HusBaoEnv(gym.Env):
             ndarray: the board state after the action
         """
         if state is None:
-            state = np.copy(state)
-        return self._execute_action(action, state)
+            state = self.state
+        return self._execute_action(action, np.copy(state))
 
     def _execute_action(self, action, state=None):
         """executes the action for the specified state (changes the state argument)
@@ -121,7 +121,7 @@ class HusBaoEnv(gym.Env):
             state[2, field] = 0
             state[3, field] = 0
         if state[row, field] > 1:
-            done, outcome = self._check_winning_condition()
+            done, outcome = self._check_winning_condition(state)
             if done:
                 return state
             self._execute_action(field + (8 if row == 1 else 0), state)
@@ -148,19 +148,30 @@ class HusBaoEnv(gym.Env):
         return {'current_player': self._current_player,
                 'outcome': self._outcome}
 
-    def _check_winning_condition(self):
+    def _check_winning_condition(self, state=None, current_player=None):
         """checks whether the game has ended yet
+        Arguments:
+            state (ndarray):      the current board state
+            current_player (int): the current player
         Returns:
             bool: done
             int: outcome
         """
-        if self.state[2:].max() <= 1 or self.state[2].max() == 0:
-            return True, -1 if self._current_player == 0 else 1
+        if state is None:
+            state = self.state
+        if current_player is None:
+            current_player = self._current_player
+        if state[2:].max() <= 1 or state[2].max() == 0:
+            return True, -1 if current_player == 0 else 1
         return False, 0
 
-    def _flip_board(self):
+    def _flip_board(self, state=None):
         """flips the board
+        Arguments:
+            state (ndarray): the board state
         Returns:
             ndarray: the flipped board
         """
-        return np.flip(np.flip(self.state, axis=0), axis=1)
+        if state is None:
+            state = self.state
+        return np.flip(np.flip(state, axis=0), axis=1)
