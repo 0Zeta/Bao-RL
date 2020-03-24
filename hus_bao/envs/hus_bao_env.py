@@ -96,8 +96,7 @@ class HusBaoEnv(gym.Env):
         """
         if state is None:
             state = self.state
-        row = 0 if action < N_FIELDS else 1
-        field = action % N_FIELDS
+        row, field = self._get_coordinates(action)
         n_stones = state[row, field]
         state[row, field] = 0
         while n_stones > 0:
@@ -148,19 +147,48 @@ class HusBaoEnv(gym.Env):
         return {'current_player': self._current_player,
                 'outcome': self._outcome}
 
-    def _check_winning_condition(self):
+    def _check_winning_condition(self, state=None):
         """checks whether the game has ended yet
+        Arguments:
+            state (ndarray): the state that should be checked
         Returns:
             bool: done
             int: outcome
         """
-        if self.state[2:].max() <= 1 or self.state[2].max() == 0:
+        if state is None:
+            state = self.state
+        if state[2:].max() <= 1:
             return True, -1 if self._current_player == 0 else 1
+        if state[2].max() == 0:
+            lost = True
+            for action in self.get_available_actions(self._flip_board(state)):
+                next_state = self.get_board_after_action(action, state)
+                if next_state[1].max() != 0 or next_state[0].max() > 1:
+                    lost = False
+                    break
+            if lost:
+                return True, -1 if self._current_player == 0 else 1
         return False, 0
 
-    def _flip_board(self):
+    def _flip_board(self, state=None):
         """flips the board
+        Arguments:
+            state (ndarray): the board state that should be flipped
         Returns:
             ndarray: the flipped board
         """
-        return np.flip(np.flip(self.state, axis=0), axis=1)
+        if state is None:
+            state = self.state
+        return np.flip(np.flip(state, axis=0), axis=1)
+
+    @staticmethod
+    def _get_coordinates(action):
+        """returns row and field for a given action
+        Arguments:
+            action (int): the action
+        Returns:
+            (int, int): row, field
+        """
+        row = 0 if action < N_FIELDS else 1
+        field = action % N_FIELDS
+        return row, field
