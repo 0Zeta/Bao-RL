@@ -13,8 +13,8 @@ class HusBaoEnv(gym.Env):
     def __init__(self):
         super(HusBaoEnv, self).__init__()
         self.action_space = spaces.Discrete(N_ACTIONS)
-        self.observation_space = spaces.Box(low=0, high=2 * 3 * N_FIELDS, shape=(N_ROWS, N_FIELDS), dtype=int)
-        self.state = np.asarray([[2] * 8, [2] * 4 + [0] * 4, [0] * 4 + [2] * 4, [2] * 8])
+        self.observation_space = spaces.Box(low=0, high=2 * N_ROWS * N_FIELDS, shape=(N_ROWS, N_FIELDS), dtype=int)
+        self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
         self.done = False
         self._current_player = 0
         self._outcome = 0  # 0 if the game hasn´t ended yet, -1 if player 0 won, 1 if player 1 won
@@ -47,7 +47,7 @@ class HusBaoEnv(gym.Env):
             ndarray: observation
         """
         self.done = False
-        self.state = np.asarray([[2] * 8, [2] * 4 + [0] * 4, [0] * 4 + [2] * 4, [2] * 8])
+        self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
         self._current_player = 0
         return np.copy(self.state)
 
@@ -117,9 +117,8 @@ class HusBaoEnv(gym.Env):
             n_stones -= 1
 
         if row == 1 and state[2, field] > 0:
-            state[row, field] += (state[2, field] + state[3, field])
+            state[row, field] += state[2, field]
             state[2, field] = 0
-            state[3, field] = 0
         if state[row, field] > 1:
             done, outcome = self._check_winning_condition(state)
             if done:
