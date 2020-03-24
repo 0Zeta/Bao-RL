@@ -35,7 +35,7 @@ class HusBaoEnv(gym.Env):
 
         self._execute_action(action)
 
-        self.done, self._outcome = self._check_winning_condition()
+        self.done, self._outcome = self.check_winning_condition()
         self.state = self._flip_board()
         data = np.copy(self.state), self._get_reward(), self.done, self._get_info()
         self._current_player = (self._current_player + 1) % 2
@@ -83,8 +83,8 @@ class HusBaoEnv(gym.Env):
             ndarray: the board state after the action
         """
         if state is None:
-            state = np.copy(state)
-        return self._execute_action(action, state)
+            state = np.copy(self.state)
+        return self._execute_action(action, np.copy(state))
 
     def _execute_action(self, action, state=None):
         """executes the action for the specified state (changes the state argument)
@@ -120,9 +120,10 @@ class HusBaoEnv(gym.Env):
             state[2, field] = 0
             state[3, field] = 0
         if state[row, field] > 1:
-            done, outcome = self._check_winning_condition()
+            done, outcome = self.check_winning_condition(state)
             if done:
                 return state
+            self.render()
             self._execute_action(field + (8 if row == 1 else 0), state)
         return state
 
@@ -147,28 +148,42 @@ class HusBaoEnv(gym.Env):
         return {'current_player': self._current_player,
                 'outcome': self._outcome}
 
-    def _check_winning_condition(self, state=None):
+    def check_winning_condition(self, state=None):
         """checks whether the game has ended yet
         Arguments:
             state (ndarray): the state that should be checked
         Returns:
             bool: done
-            int: outcome
+            int:  outcome
         """
         if state is None:
             state = self.state
         if state[2:].max() <= 1:
             return True, -1 if self._current_player == 0 else 1
         if state[2].max() == 0:
-            lost = True
-            for action in self.get_available_actions(self._flip_board(state)):
-                next_state = self.get_board_after_action(action, state)
-                if next_state[1].max() != 0 or next_state[0].max() > 1:
-                    lost = False
-                    break
-            if lost:
+            flipped_board = self._flip_board(state)
+            if self._is_lost(flipped_board):
                 return True, -1 if self._current_player == 0 else 1
         return False, 0
+
+    def _is_lost(self, state):
+        """determines whether every possible combination of actions of the current player results in him losing
+        Arguments:
+            state (ndarray): the current board state
+        Returns:
+            bool: lost
+        """
+        if state[1].max() > 0:
+            return False
+        if state[0].max() == 1:
+            return True
+        lost = True
+        for action in self.get_available_actions(state):
+            next_state = self.get_board_after_action(action, state)
+            if not self._is_lost(next_state):
+                lost = False
+                break
+        return lost
 
     def _flip_board(self, state=None):
         """flips the board
