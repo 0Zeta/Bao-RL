@@ -16,7 +16,7 @@ class HusBaoEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=2 * N_ROWS * N_FIELDS, shape=(N_ROWS, N_FIELDS), dtype=int)
         self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
         self.done = False
-        self._current_player = 0
+        self.current_player = 0
         self.outcome = 0  # 0 if the game hasn´t ended yet, -1 if player 0 won, 1 if player 1 won
 
     def step(self, action):
@@ -37,8 +37,8 @@ class HusBaoEnv(gym.Env):
 
         self.done, self.outcome = self._check_winning_condition()
         data = np.copy(self.state), self._get_reward(), self.done, self._get_info()
-        self.state = self._flip_board()
-        self._current_player = (self._current_player + 1) % 2
+        self.state = self.flip_board()
+        self.current_player = (self.current_player + 1) % 2
         return data
 
     def reset(self):
@@ -48,7 +48,7 @@ class HusBaoEnv(gym.Env):
         """
         self.done = False
         self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
-        self._current_player = 0
+        self.current_player = 0
         return np.copy(self.state)
 
     def render(self, mode='human', close=False):
@@ -134,8 +134,8 @@ class HusBaoEnv(gym.Env):
         if self.outcome == 0:
             return 0
         else:
-            if (self.outcome == -1 and self._current_player == 0) or (
-                    self.outcome == 1 and self._current_player == 1):
+            if (self.outcome == -1 and self.current_player == 0) or (
+                    self.outcome == 1 and self.current_player == 1):
                 return 1
             return -1
 
@@ -144,7 +144,7 @@ class HusBaoEnv(gym.Env):
         Returns:
             dict: info on the game
         """
-        return {'current_player': self._current_player,
+        return {'current_player': self.current_player,
                 'outcome': self.outcome}
 
     def _check_winning_condition(self, state=None, current_player=None):
@@ -159,12 +159,12 @@ class HusBaoEnv(gym.Env):
         if state is None:
             state = self.state
         if current_player is None:
-            current_player = self._current_player
+            current_player = self.current_player
         if state[2:].max() <= 1 or state[2].max() == 0:
             return True, -1 if current_player == 0 else 1
         return False, 0
 
-    def _flip_board(self, state=None):
+    def flip_board(self, state=None):
         """flips the board
         Arguments:
             state (ndarray): the board state
