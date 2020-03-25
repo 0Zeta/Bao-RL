@@ -96,8 +96,7 @@ class HusBaoEnv(gym.Env):
         """
         if state is None:
             state = self.state
-        row = 0 if action < N_FIELDS else 1
-        field = action % N_FIELDS
+        row, field = self.get_coordinates(action)
         n_stones = state[row, field]
         state[row, field] = 0
         while n_stones > 0:
@@ -174,3 +173,15 @@ class HusBaoEnv(gym.Env):
         if state is None:
             state = self.state
         return np.flip(np.flip(state, axis=0), axis=1)
+
+    @staticmethod
+    def get_coordinates(action):
+        """returns row and field for a given action
+        Arguments:
+            action (int): the action
+        Returns:
+            (int, int): row, field
+        """
+        row = 0 if action < N_FIELDS else 1
+        field = action % N_FIELDS
+        return row, field

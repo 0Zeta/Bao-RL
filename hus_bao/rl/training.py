@@ -7,7 +7,7 @@ from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 from hus_bao.envs.hus_bao_env import HusBaoEnv
-from hus_bao.rl.agents import Agent, RandomAgent, SimpleRLAgent
+from hus_bao.rl.agents import Agent, SimpleRLAgent, MostStonesAgent
 from hus_bao.rl.model import build_model
 
 RANDOM_STATE = 12345
@@ -85,13 +85,13 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
 def train_model():
     model = build_model()
     model.fit_generator(
-        generator=data_generator(500, SimpleRLAgent(model, exploration_rate=0.1, env=HusBaoEnv()), [RandomAgent()],
+        generator=data_generator(1000, SimpleRLAgent(model, exploration_rate=0.1, env=HusBaoEnv()), [MostStonesAgent()],
                                  model),
-        callbacks=[EarlyStopping(monitor='loss', patience=10, restore_best_weights=True),
+        callbacks=[EarlyStopping(monitor='loss', patience=200, restore_best_weights=True),
                    ModelCheckpoint(
                        filepath='F:/model_checkpoints/hus_bao/weights.{epoch:02d}-{loss:.2f}.hdf5',
                        monitor='loss', save_weights_only=True, save_best_only=True, save_freq=25)],
-        epochs=1000000, steps_per_epoch=20)
+        epochs=1000000, steps_per_epoch=1)
 
 
 train_model()

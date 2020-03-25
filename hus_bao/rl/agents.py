@@ -3,6 +3,8 @@ from random import choice, randint
 import numpy as np
 from scipy.special import softmax
 
+from hus_bao.envs.hus_bao_env import HusBaoEnv
+
 
 class Agent(object):
     def move(self, game_state, available_actions):
@@ -21,6 +23,20 @@ class RandomAgent(Agent):
 
     def move(self, game_state, available_actions):
         return choice(available_actions)
+
+
+class MostStonesAgent(Agent):
+    """an agent that always chooses the action that uses the field with the most stones"""
+
+    def move(self, game_state, available_actions):
+        max_action = available_actions[0]
+        max_stones = 0
+        for action in available_actions:
+            row, field = HusBaoEnv.get_coordinates(action)
+            if game_state[row][field] > max_stones:
+                max_action = action
+                max_stones = game_state[row][field]
+        return max_action
 
 
 class SimpleRLAgent(Agent):
