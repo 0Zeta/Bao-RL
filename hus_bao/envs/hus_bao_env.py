@@ -17,7 +17,7 @@ class HusBaoEnv(gym.Env):
         self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
         self.done = False
         self._current_player = 0
-        self._outcome = 0  # 0 if the game hasn´t ended yet, -1 if player 0 won, 1 if player 1 won
+        self.outcome = 0  # 0 if the game hasn´t ended yet, -1 if player 0 won, 1 if player 1 won
 
     def step(self, action):
         """steps the environment by an action.
@@ -35,9 +35,9 @@ class HusBaoEnv(gym.Env):
 
         self._execute_action(action)
 
-        self.done, self._outcome = self._check_winning_condition()
-        self.state = self._flip_board()
+        self.done, self.outcome = self._check_winning_condition()
         data = np.copy(self.state), self._get_reward(), self.done, self._get_info()
+        self.state = self._flip_board()
         self._current_player = (self._current_player + 1) % 2
         return data
 
@@ -131,11 +131,11 @@ class HusBaoEnv(gym.Env):
         Returns:
             int: reward
         """
-        if self._outcome == 0:
+        if self.outcome == 0:
             return 0
         else:
-            if (self._outcome == -1 and self._current_player == 0) or (
-                    self._outcome == 1 and self._current_player == 1):
+            if (self.outcome == -1 and self._current_player == 0) or (
+                    self.outcome == 1 and self._current_player == 1):
                 return 1
             return -1
 
@@ -145,7 +145,7 @@ class HusBaoEnv(gym.Env):
             dict: info on the game
         """
         return {'current_player': self._current_player,
-                'outcome': self._outcome}
+                'outcome': self.outcome}
 
     def _check_winning_condition(self, state=None, current_player=None):
         """checks whether the game has ended yet
