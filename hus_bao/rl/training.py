@@ -6,7 +6,8 @@ import numpy as np
 from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
-from hus_bao.rl.agents import Agent, RandomAgent
+from hus_bao.envs.hus_bao_env import HusBaoEnv
+from hus_bao.rl.agents import Agent, RandomAgent, SimpleRLAgent
 from hus_bao.rl.model import build_model
 
 RANDOM_STATE = 12345
@@ -83,12 +84,14 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
 
 def train_model():
     model = build_model()
-    model.fit_generator(generator=data_generator(500, RandomAgent(), [RandomAgent()], model),
-                        callbacks=[EarlyStopping(monitor='loss', patience=10, restore_best_weights=True),
-                                   ModelCheckpoint(
-                                       filepath='F:/model_checkpoints/hus_bao/weights.{epoch:02d}-{loss:.2f}.hdf5',
-                                       monitor='loss', save_weights_only=True, save_best_only=True, save_freq=5)],
-                        epochs=1000000, steps_per_epoch=20)
+    model.fit_generator(
+        generator=data_generator(500, SimpleRLAgent(model, exploration_rate=0.1, env=HusBaoEnv()), [RandomAgent()],
+                                 model),
+        callbacks=[EarlyStopping(monitor='loss', patience=10, restore_best_weights=True),
+                   ModelCheckpoint(
+                       filepath='F:/model_checkpoints/hus_bao/weights.{epoch:02d}-{loss:.2f}.hdf5',
+                       monitor='loss', save_weights_only=True, save_best_only=True, save_freq=25)],
+        epochs=1000000, steps_per_epoch=20)
 
 
 train_model()

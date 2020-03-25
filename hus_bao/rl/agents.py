@@ -1,4 +1,7 @@
-from random import choice
+from random import choice, randint
+
+import numpy as np
+from scipy.special import softmax
 
 
 class Agent(object):
@@ -18,3 +21,29 @@ class RandomAgent(Agent):
 
     def move(self, game_state, available_actions):
         return choice(available_actions)
+
+
+class SimpleRLAgent(Agent):
+    """a simple rl agent that doesn´t look at future moves"""
+
+    def __init__(self, model, exploration_rate, env):
+        """
+        Arguments:
+            model (Model):            the model to use for predictions
+            exploration_rate (float): the probability to choose a random move
+            env (HusBaoEnv):          a game environment
+        """
+        self.model = model
+        self.exploration_rate = exploration_rate
+        self.env = env
+
+    def move(self, game_state, available_actions):
+        if randint(0, 100) <= self.exploration_rate * 100:
+            return choice(available_actions)
+        else:
+            possible_states = np.reshape(
+                np.asarray([self.env.get_board_after_action(action, game_state) for action in available_actions],
+                           dtype=np.int), newshape=(-1, 32))
+            estimated_values = np.reshape(self.model.predict(possible_states), newshape=(-1,))
+            probabilities = softmax(estimated_values)
+            return int(np.random.choice(available_actions, p=probabilities))
