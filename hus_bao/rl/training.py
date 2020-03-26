@@ -4,7 +4,7 @@ from random import choice, getrandbits
 import gym
 import numpy as np
 from sklearn.utils import shuffle
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 from hus_bao.envs.hus_bao_env import HusBaoEnv
 from hus_bao.rl.agents import Agent, SimpleRLAgent, RandomAgent
@@ -12,7 +12,7 @@ from hus_bao.rl.model import build_model, encode_states
 
 RANDOM_STATE = 12345
 random.seed(RANDOM_STATE)
-ARCHITECTURE = 'test2'
+ARCHITECTURE = 'test3'
 
 
 def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma2=0.8, move_penalty=-0.002):
@@ -86,16 +86,19 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
 
 def train_model():
     model = build_model(ARCHITECTURE)
+    model.load_weights("F:/model_checkpoints/hus_bao/test3/weights.100-49.44.hdf5")
     environment = HusBaoEnv()
     model.fit_generator(
         generator=data_generator(1000, SimpleRLAgent(model, exploration_rate=0.05, env=environment), [
-            RandomAgent()],
+            SimpleRLAgent(model, exploration_rate=0.3, env=environment),
+            SimpleRLAgent(model, exploration_rate=0.1, env=environment), RandomAgent()
+        ],
                                  model),
-        callbacks=[EarlyStopping(monitor='loss', patience=200, restore_best_weights=True),
-                   ModelCheckpoint(
-                       filepath='F:/model_checkpoints/hus_bao/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
-                       monitor='loss', save_weights_only=True, save_best_only=False, period=25)],
-        epochs=1000000, steps_per_epoch=1, initial_epoch=0)
+        callbacks=[ModelCheckpoint(
+            filepath='F:/model_checkpoints/hus_bao/test3/weights.{epoch:02d}-{loss:.2f}.hdf5',
+            monitor='loss', save_weights_only=True, save_best_only=False, period=25)],
+        epochs=1000000, steps_per_epoch=1, initial_epoch=100)
 
 
-train_model()
+if __name__ == '__main__':
+    train_model()

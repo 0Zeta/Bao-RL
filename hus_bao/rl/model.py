@@ -17,6 +17,8 @@ def build_model(architecture):
         return _build_test1()
     elif architecture == 'test2':
         return _build_test2()
+    elif architecture == 'test3':
+        return _build_test3()
 
 
 def encode_states(states, architecture):
@@ -31,6 +33,8 @@ def encode_states(states, architecture):
         return np.asarray(states, dtype=int)
     elif architecture == 'test2':
         return _encode_test2(states)
+    elif architecture == 'test3':
+        return _encode_test3(states)
 
 
 def _build_test1():
@@ -75,7 +79,7 @@ def _build_test2():
 
     # fully connected network
     dense_1 = Dense(1024, activation='relu')(inputs)
-    dense_2 = Dense(1024, activation='tanh')(dense_1)
+    dense_2 = Dense(1024, activation='relu')(dense_1)
     dense_3 = Dense(700, activation='relu')(dense_2)
     dense_4 = Dense(512, activation='relu')(dense_3)
     dropout = Dropout(0.2)(dense_4)
@@ -87,10 +91,40 @@ def _build_test2():
     return model
 
 
+def _build_test3():
+    inputs = Input(shape=(704,))  # uses one-hot encoding capping all values above 22
+
+    dense_1 = Dense(800, activation='relu')(inputs)
+
+    # Convnet
+    reshape = Reshape(target_shape=(4, 8, 22))(inputs)
+    conv_1 = Conv2D(8, kernel_size=(3, 3), strides=1, padding='same', activation='relu')(reshape)
+    conv_2 = Conv2D(16, kernel_size=(6, 6), strides=1, padding='same', activation='relu')(conv_1)
+    flatten = Flatten()(conv_2)
+
+    concatenate = Concatenate()([dense_1, flatten])
+    dense_2 = Dense(2048, activation='relu')(concatenate)
+    dense_3 = Dense(1024, activation='relu')(dense_2)
+    dropout = Dropout(0.2)(dense_3)
+    dense_4 = Dense(512, activation='relu')(dropout)
+    predictions = Dense(1)(dense_4)
+
+    model = Model(inputs=inputs, outputs=predictions)
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+    return model
+
+
 def _encode_test2(states):
     encoded_states = np.ndarray(shape=(len(states), 768))
     for i, state in enumerate(states):  # TODO: optimize
         encoded_states[i] = _one_hot(state, 24)
+    return encoded_states
+
+
+def _encode_test3(states):
+    encoded_states = np.ndarray(shape=(len(states), 704))
+    for i, state in enumerate(states):  # TODO: optimize
+        encoded_states[i] = _one_hot(state, 22)
     return encoded_states
 
 
@@ -102,7 +136,7 @@ def _one_hot(state, cap):
     Returns:
         ndarray: the encoded game states
     """
-    encoded_state = np.ndarray(shape=(32 * cap,), dtype=int)
+    encoded_state = np.zeros(shape=(32 * cap,), dtype=int)
     for i, field in enumerate(state):
-        encoded_state[(i * 24 + min(field, cap - 1))] = 1
+        encoded_state[(i * cap + min(field, cap - 1))] = 1
     return encoded_state

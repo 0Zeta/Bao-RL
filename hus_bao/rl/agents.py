@@ -61,9 +61,6 @@ class SimpleRLAgent(Agent):
             possible_states = np.reshape(
                 np.asarray([self.env.get_board_after_action(action, game_state) for action in available_actions],
                            dtype=np.int), newshape=(-1, 32))
-            estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test2')), newshape=(-1,))
+            estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test3')), newshape=(-1,))
             probabilities = softmax(estimated_values)
-            #       if sum(probabilities) != 1:
-            #       return choice(available_actions)
-            #      print(probabilities)
             return int(np.random.choice(available_actions, p=probabilities))
