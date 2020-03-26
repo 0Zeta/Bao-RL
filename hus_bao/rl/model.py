@@ -104,5 +104,5 @@ def _one_hot(state, cap):
     """
     encoded_state = np.ndarray(shape=(32 * cap,), dtype=int)
     for i, field in enumerate(state):
-        encoded_state[(i * 24 + max(field, cap - 1))] = 1
+        encoded_state[(i * 24 + min(field, cap - 1))] = 1
     return encoded_state
