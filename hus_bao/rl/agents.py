@@ -4,6 +4,7 @@ import numpy as np
 from scipy.special import softmax
 
 from hus_bao.envs.hus_bao_env import HusBaoEnv
+from hus_bao.rl.model import encode_states
 
 
 class Agent(object):
@@ -60,6 +61,9 @@ class SimpleRLAgent(Agent):
             possible_states = np.reshape(
                 np.asarray([self.env.get_board_after_action(action, game_state) for action in available_actions],
                            dtype=np.int), newshape=(-1, 32))
-            estimated_values = np.reshape(self.model.predict(possible_states), newshape=(-1,))
+            estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test2')), newshape=(-1,))
             probabilities = softmax(estimated_values)
+            #       if sum(probabilities) != 1:
+            #       return choice(available_actions)
+            #      print(probabilities)
             return int(np.random.choice(available_actions, p=probabilities))

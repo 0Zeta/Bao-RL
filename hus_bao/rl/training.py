@@ -7,11 +7,12 @@ from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 from hus_bao.envs.hus_bao_env import HusBaoEnv
-from hus_bao.rl.agents import Agent, SimpleRLAgent, MostStonesAgent
-from hus_bao.rl.model import build_model
+from hus_bao.rl.agents import Agent, SimpleRLAgent, RandomAgent
+from hus_bao.rl.model import build_model, encode_states
 
 RANDOM_STATE = 12345
 random.seed(RANDOM_STATE)
+ARCHITECTURE = 'test2'
 
 
 def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma2=0.8, move_penalty=-0.002):
@@ -69,29 +70,32 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
             possible_states = [[[np.reshape(env.get_board_after_action(action, state), newshape=(32,)) for action in
                                  env.get_available_actions(state)] for state in flipped_states[i]] for i in range(2)]
             estimates = [
-                [np.reshape(model.predict(np.asarray(x, dtype=np.int)), newshape=(-1,)) for x in possible_states[i]] for
+                [np.reshape(model.predict(encode_states(x, ARCHITECTURE)), newshape=(-1,)) for x in possible_states[i]]
+                for
                 i in range(2)]  # TODO: optimize
             next_state_values = [np.asarray([-np.max(x) for x in estimates[i]], dtype=np.float) for i in range(2)]
 
             for z in range(2):
                 values[z][:-1] += gamma2 * next_state_values[z]
-                X.extend(states_after_action[z])
+                X.extend([np.reshape(state, newshape=(32,)) for state in states_after_action[z]])
                 y.extend(values[z])
-        X = np.reshape(X, newshape=(-1, 32))
-        X, y = shuffle(np.asarray(X), np.asarray(y), random_state=RANDOM_STATE)
+        X = encode_states(X, ARCHITECTURE)
+        X, y = shuffle(X, np.asarray(y), random_state=RANDOM_STATE)
         yield X[:batch_size], y[:batch_size]
 
 
 def train_model():
-    model = build_model()
+    model = build_model(ARCHITECTURE)
+    environment = HusBaoEnv()
     model.fit_generator(
-        generator=data_generator(1000, SimpleRLAgent(model, exploration_rate=0.1, env=HusBaoEnv()), [MostStonesAgent()],
+        generator=data_generator(1000, SimpleRLAgent(model, exploration_rate=0.05, env=environment), [
+            RandomAgent()],
                                  model),
         callbacks=[EarlyStopping(monitor='loss', patience=200, restore_best_weights=True),
                    ModelCheckpoint(
-                       filepath='F:/model_checkpoints/hus_bao/weights.{epoch:02d}-{loss:.2f}.hdf5',
-                       monitor='loss', save_weights_only=True, save_best_only=True, save_freq=25)],
-        epochs=1000000, steps_per_epoch=1)
+                       filepath='F:/model_checkpoints/hus_bao/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
+                       monitor='loss', save_weights_only=True, save_best_only=False, period=25)],
+        epochs=1000000, steps_per_epoch=1, initial_epoch=0)
 
 
 train_model()

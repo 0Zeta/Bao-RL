@@ -13,7 +13,7 @@ class HusBaoEnv(gym.Env):
     def __init__(self):
         super(HusBaoEnv, self).__init__()
         self.action_space = spaces.Discrete(N_ACTIONS)
-        self.observation_space = spaces.Box(low=0, high=2 * N_ROWS * N_FIELDS, shape=(N_ROWS, N_FIELDS), dtype=int)
+        self.observation_space = spaces.Box(low=0, high=32, shape=(N_ROWS, N_FIELDS), dtype=int)
         self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])
         self.done = False
         self.current_player = 0
