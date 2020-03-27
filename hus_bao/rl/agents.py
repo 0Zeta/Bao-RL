@@ -66,6 +66,56 @@ class SimpleRLAgent(Agent):
             return int(np.random.choice(available_actions, p=probabilities))
 
 
+class TestAlphaBetaAgent(Agent):
+    """an agent using alpha-beta evaluating only won or lost positions"""
+
+    def __init__(self):
+        self.env = HusBaoEnv()
+
+    def move(self, game_state, available_actions):
+        estimated_values = np.asarray([self._get_state_value(
+            self.env.flip_board(self.env.get_board_after_action(action, game_state)), 0, False, -99999999, 99999999) for
+            action in available_actions])
+        return int(available_actions[np.argmax(estimated_values)])
+
+    def _get_state_value(self, state, depth, maximizes, alpha, beta, max_depth=5):
+        """estimates the value of a state
+        Arguments:
+            depth (int):      the current search depth
+            state (ndarray):  the state that should be looked at
+            maximizes (bool): whether the current node belongs to the maximizing player
+            alpha (float):    alpha
+            beta (float):     beta
+            max_depth (int):  the maximum search depth
+        """
+        if state[2:].max() <= 1 or state[2].max() == 0:
+            return 1000 if maximizes else -1000
+        if state[0:1].max() <= 1 or state[1].max() == 0:
+            return -1000 if maximizes else 1000
+        if depth == max_depth:
+            return 0
+        if maximizes:
+            best_val = -1000000
+            for child_state in [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
+                                self.env.get_available_actions(state)]:
+                value = self._get_state_value(child_state, depth + 1, False, alpha, beta)
+                best_val = max(best_val, value)
+                alpha = max(alpha, best_val)
+                if beta <= alpha:
+                    break
+            return best_val
+        else:
+            best_val = 1000000
+            for child_state in [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
+                                self.env.get_available_actions(state)]:
+                value = self._get_state_value(child_state, depth + 1, True, alpha, beta)
+                best_val = min(best_val, value)
+                beta = min(beta, best_val)
+                if beta <= alpha:
+                    break
+            return best_val
+
+
 class AlphaBetaRLAgent(Agent):
     """a rl agent that uses an alpha beta-pruned search"""
 
@@ -83,8 +133,8 @@ class AlphaBetaRLAgent(Agent):
         if randint(0, 100) <= self.exploration_rate * 100:
             return choice(available_actions)
         estimated_values = np.asarray([self._get_state_value(
-            self.env.flip_board(self.env.get_board_after_action(action, game_state)), 0, False, 99999999, -99999999) for
-                                       action in available_actions])
+            self.env.flip_board(self.env.get_board_after_action(action, game_state)), 0, False, -99999999, 99999999) for
+            action in available_actions])
         probabilities = softmax(estimated_values)
         return int(np.random.choice(available_actions, p=probabilities))
 
@@ -101,7 +151,7 @@ class AlphaBetaRLAgent(Agent):
         estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test2')), newshape=(-1,))
         return estimated_values
 
-    def _get_state_value(self, state, depth, maximizes, alpha, beta, max_depth=5):
+    def _get_state_value(self, state, depth, maximizes, alpha, beta, max_depth=2):
         """estimates the value of a state
         Arguments:
             depth (int):      the current search depth
@@ -112,14 +162,14 @@ class AlphaBetaRLAgent(Agent):
             max_depth (int):  the maximum search depth
         """
         if state[2:].max() <= 1 or state[2].max() == 0:
-            return 10 if maximizes else -10
+            return 1000 if maximizes else -1000
         if state[0:1].max() <= 1 or state[1].max() == 0:
-            return -10 if maximizes else 10
+            return -1000 if maximizes else 1000
         if depth == max_depth:
             estimated_state_value = np.max(self._get_estimated_action_values(state))
             return estimated_state_value if maximizes else -estimated_state_value
         if maximizes:
-            best_val = -10
+            best_val = -1000000
             for child_state in [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
                                 self.env.get_available_actions(state)]:
                 value = self._get_state_value(child_state, depth + 1, False, alpha, beta)
@@ -129,7 +179,7 @@ class AlphaBetaRLAgent(Agent):
                     break
             return best_val
         else:
-            best_val = 10
+            best_val = 1000000
             for child_state in [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
                                 self.env.get_available_actions(state)]:
                 value = self._get_state_value(child_state, depth + 1, True, alpha, beta)
