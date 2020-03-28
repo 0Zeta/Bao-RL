@@ -7,11 +7,11 @@ N_FIELDS = 8
 N_ACTIONS = 16
 
 
-class HusBaoEnv(gym.Env):
+class BaoEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        super(HusBaoEnv, self).__init__()
+        super(BaoEnv, self).__init__()
         self.action_space = spaces.Discrete(N_ACTIONS)
         self.observation_space = spaces.Box(low=0, high=32, shape=(N_ROWS, N_FIELDS), dtype=int)
         self.state = np.asarray(N_ROWS * [N_FIELDS * [2]])

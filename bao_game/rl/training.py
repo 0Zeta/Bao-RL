@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-from hus_bao.rl.agents import Agent, MinimaxRLAgent
-from hus_bao.rl.model import build_model, encode_states
+from bao_game.rl.agents import Agent, MinimaxRLAgent
+from bao_game.rl.model import build_model, encode_states
 
 RANDOM_STATE = 12345
 random.seed(RANDOM_STATE)
@@ -27,7 +27,7 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, move_
         ndarray: the game states (after an action)
         ndarray: the computed values of the states
     """
-    env = gym.make('HusBao-v0')
+    env = gym.make('Bao-v0')
     while True:
         X = []
         y = []
@@ -78,16 +78,15 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, move_
 
 def train_model():
     model = build_model(ARCHITECTURE)
-    model.load_weights("F:/model_checkpoints/hus_bao/test2/weights.30-3.89.hdf5")
+    model.load_weights("F:/model_checkpoints/bao_game/test2/weights.150-0.99.hdf5")
     model.fit_generator(
-        generator=data_generator(200, MinimaxRLAgent(model, exploration_rate=0.02, min_prob=0.05), [
-            MinimaxRLAgent(model, exploration_rate=0.2, min_prob=0.1),
-            MinimaxRLAgent(model, exploration_rate=0.35, min_prob=0.2)
+        generator=data_generator(200, MinimaxRLAgent(model, exploration_rate=0.01, min_prob=0.01), [
+            MinimaxRLAgent(model, exploration_rate=0.05, min_prob=0.05)
         ], model),
         callbacks=[ModelCheckpoint(
-            filepath='F:/model_checkpoints/hus_bao/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
+            filepath='F:/model_checkpoints/bao_game/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
             monitor='loss', save_weights_only=True, save_best_only=False, save_freq=10 * 200)],
-        epochs=1000000, steps_per_epoch=1, initial_epoch=30)
+        epochs=1000000, steps_per_epoch=1, initial_epoch=150)
 
 
 if __name__ == '__main__':
