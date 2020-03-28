@@ -215,7 +215,7 @@ class MinimaxRLAgent(Agent):
         quickly_estimated_action_values = self._get_estimated_action_values(game_state)
         estimated_probabilities = softmax(quickly_estimated_action_values)
         estimated_values = np.asarray([self._get_state_value(
-            self.env.flip_board(self.env.get_board_after_action(action, game_state)), min(prob + 0.001, 1.0), False,
+            self.env.flip_board(self.env.get_board_after_action(action, game_state)), prob, False,
             -99999999, 99999999, min_prob=self.min_prob, depth=0) for
             action, prob in zip(available_actions, estimated_probabilities)])
         if self.choose_highest_rated_move:
