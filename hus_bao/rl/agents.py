@@ -19,6 +19,27 @@ class Agent(object):
         pass
 
 
+class HumanAgent(Agent):
+    """an agent that can be controlled via the command line"""
+
+    def __init__(self, env):
+        """
+        Arguments:
+            env (HusBaoEnv): the game environment
+        """
+        self.env = env
+
+    def move(self, game_state, available_actions):
+        self.env.render()
+        action = -1
+        while action not in available_actions:
+            print("Please choose a valid action")
+            row = int(input("Please enter the row you want to choose: ")) - 1
+            field = 8 - int(input("Please enter the field you want to choose: "))
+            action = row * 8 + field
+        return action
+
+
 class RandomAgent(Agent):
     """an agent that always chooses a random action"""
 
