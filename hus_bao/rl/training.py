@@ -14,15 +14,14 @@ random.seed(RANDOM_STATE)
 ARCHITECTURE = 'test2'
 
 
-def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma2=0.8, move_penalty=-0.002):
+def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, move_penalty=-0.002):
     """generates data for the model
     Arguments:
         batch_size (int):     how many datapoints should be generated
         agent (Agent):        the main agent for the data
         opponents (list):     the opponents for the agent
         model (Model):        the model that should be used to evaluate states
-        gamma (float):        the discount factor that should be used for reward computation
-        gamma2 (float):       the discount factor for the added value estimate of the next state
+        gamma (float):        the discount factor for the added value estimate of the next state
         move_penalty (float): the reward that should be added to each move
     Returns:
         ndarray: the game states (after an action)
@@ -58,11 +57,6 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
             values[0][-1] += -outcome * 10
             values[1][-1] += outcome * 10
 
-            # Compute rewards
-            for rewards in values:
-                for i in reversed(range(len(rewards) - 1)):
-                    rewards[i] += gamma * rewards[i + 1]
-
             # Add estimates of the new states to every but the last states (=> [:-1])
             flipped_states = [[env.flip_board(state) for state in states_after_action[i][:-1]] for i in range(2)]
             possible_states = [[[np.reshape(env.get_board_after_action(action, state), newshape=(32,)) for action in
@@ -74,7 +68,7 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
             next_state_values = [np.asarray([-np.max(x) for x in estimates[i]], dtype=np.float) for i in range(2)]
 
             for z in range(2):
-                values[z][:-1] += gamma2 * next_state_values[z]
+                values[z][:-1] += gamma * next_state_values[z]
                 X.extend([np.reshape(state, newshape=(32,)) for state in states_after_action[z]])
                 y.extend(values[z])
         X = encode_states(X, ARCHITECTURE)
@@ -84,16 +78,16 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
 
 def train_model():
     model = build_model(ARCHITECTURE)
-    model.load_weights("F:/model_checkpoints/hus_bao/test2/weights.125-45.19.hdf5")
+    model.load_weights("F:/model_checkpoints/hus_bao/test2/weights.30-3.89.hdf5")
     model.fit_generator(
         generator=data_generator(200, MinimaxRLAgent(model, exploration_rate=0.02, min_prob=0.05), [
-            MinimaxRLAgent(model, exploration_rate=0.1, min_prob=0.1),
+            MinimaxRLAgent(model, exploration_rate=0.2, min_prob=0.1),
             MinimaxRLAgent(model, exploration_rate=0.35, min_prob=0.2)
         ], model),
         callbacks=[ModelCheckpoint(
             filepath='F:/model_checkpoints/hus_bao/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
             monitor='loss', save_weights_only=True, save_best_only=False, save_freq=10 * 200)],
-        epochs=1000000, steps_per_epoch=1, initial_epoch=125)
+        epochs=1000000, steps_per_epoch=1, initial_epoch=30)
 
 
 if __name__ == '__main__':
