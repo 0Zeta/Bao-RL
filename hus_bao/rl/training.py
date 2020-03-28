@@ -6,8 +6,7 @@ import numpy as np
 from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-from hus_bao.envs.hus_bao_env import HusBaoEnv
-from hus_bao.rl.agents import Agent, SimpleRLAgent, RandomAgent
+from hus_bao.rl.agents import Agent, MinimaxRLAgent
 from hus_bao.rl.model import build_model, encode_states
 
 RANDOM_STATE = 12345
@@ -52,7 +51,6 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
                 next_state, reward, done, _ = env.step(current_agent.move(state, env.get_available_actions()))
                 states_after_action[current_player].append(next_state)
                 current_agent, waiting_agent = waiting_agent, current_agent
-
             # Compute state values (The states are the results of actions.)
             values = [np.full(fill_value=move_penalty, shape=(len(states_after_action[0]),), dtype=np.float),
                       np.full(fill_value=move_penalty, shape=(len(states_after_action[1]),), dtype=np.float)]
@@ -86,19 +84,16 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, gamma
 
 def train_model():
     model = build_model(ARCHITECTURE)
-    model.load_weights("F:/model_checkpoints/hus_bao/test2/weights.300-43.54.hdf5")
-    environment = HusBaoEnv()
+    model.load_weights("F:/model_checkpoints/hus_bao/test2/weights.125-45.19.hdf5")
     model.fit_generator(
-        generator=data_generator(1000, SimpleRLAgent(model, exploration_rate=0.05, env=environment), [
-            SimpleRLAgent(model, exploration_rate=0.3, env=environment),
-            SimpleRLAgent(model, exploration_rate=0.1, env=environment),
-            RandomAgent()
-        ],
-                                 model),
+        generator=data_generator(200, MinimaxRLAgent(model, exploration_rate=0.02, min_prob=0.05), [
+            MinimaxRLAgent(model, exploration_rate=0.1, min_prob=0.1),
+            MinimaxRLAgent(model, exploration_rate=0.35, min_prob=0.2)
+        ], model),
         callbacks=[ModelCheckpoint(
             filepath='F:/model_checkpoints/hus_bao/test2/weights.{epoch:02d}-{loss:.2f}.hdf5',
-            monitor='loss', save_weights_only=True, save_best_only=False, period=25)],
-        epochs=1000000, steps_per_epoch=1, initial_epoch=300)
+            monitor='loss', save_weights_only=True, save_best_only=False, save_freq=10 * 200)],
+        epochs=1000000, steps_per_epoch=1, initial_epoch=125)
 
 
 if __name__ == '__main__':
