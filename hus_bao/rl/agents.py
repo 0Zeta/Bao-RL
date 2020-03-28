@@ -193,16 +193,20 @@ class AlphaBetaRLAgent(Agent):
 class MinimaxRLAgent(Agent):
     """a rl agent that uses an probability and alpha beta-pruned minimax search"""
 
-    def __init__(self, model, exploration_rate, min_prob=0.001):
+    def __init__(self, model, exploration_rate, choose_highest_rated_move=False, min_prob=0.001):
         """
         Arguments:
-            model (Model):            the model to use for predictions
-            exploration_rate (float): the probability to choose a random move
-            min_prob (float):         the probability cap to use for the game tree search
+            model (Model):                    the model to use for predictions
+            exploration_rate (float):         the probability to choose a random move
+            choose_highest_rated_move (bool): whether the agent should always choose the move with the highest estimated value
+                                              if False the agent will choose from a probability distribution of the estimated
+                                              values after applying the softmax function
+            min_prob (float):                 the probability cap to use for the game tree search
         """
         self.model = model
         self.exploration_rate = exploration_rate
         self.min_prob = min_prob
+        self.choose_highest_rated_move = choose_highest_rated_move
         self.env = HusBaoEnv()
 
     def move(self, game_state, available_actions):
@@ -214,8 +218,11 @@ class MinimaxRLAgent(Agent):
             self.env.flip_board(self.env.get_board_after_action(action, game_state)), min(prob + 0.001, 1.0), False,
             -99999999, 99999999, min_prob=self.min_prob, depth=0) for
             action, prob in zip(available_actions, estimated_probabilities)])
-        probabilities = softmax(estimated_values)
-        return int(np.random.choice(available_actions, p=probabilities))
+        if self.choose_highest_rated_move:
+            return available_actions[np.argmax(estimated_values)]
+        else:
+            probabilities = softmax(estimated_values)
+            return int(np.random.choice(available_actions, p=probabilities))
 
     def _get_estimated_action_values(self, state):
         """estimates the values of all actions possible in the specified state
