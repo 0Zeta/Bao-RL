@@ -1,5 +1,5 @@
 # Deep Reinforcement Learning for Bao
-This was a hobby project by @Dave-Frank-419 and me to explore the topic of deep reinforcement learning a bit.
+This was a hobby project by [@Dave-Frank-419](https://github.com/Dave-Frank-419) and me to explore the topic of deep reinforcement learning a bit.
 ## The game
 We decided to tackle the mancala game Bao la kujifunza, a simple variant of Bao which is played on a board with 4x8 pits.
 ![bao_board](https://user-images.githubusercontent.com/9535190/77852183-861d4e00-71dd-11ea-9ced-74e93a2b4414.jpg)
