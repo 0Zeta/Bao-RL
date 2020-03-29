@@ -2,10 +2,10 @@ import random
 from random import choice, getrandbits
 
 import gym
-import numpy as np
 from sklearn.utils import shuffle
 from tensorflow.keras.callbacks import ModelCheckpoint
 
+from bao_game.envs.bao_utils import *
 from bao_game.rl.agents import Agent, MinimaxRLAgent
 from bao_game.rl.model import build_model, encode_states
 
@@ -47,7 +47,8 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, move_
             while not env.done:
                 state = np.copy(env.state)
                 current_player = env.current_player
-                next_state, reward, done, _ = env.step(current_agent.move(state, env.get_available_actions()))
+                next_state, reward, done, _ = env.step(
+                    current_agent.move(state, get_available_actions(state=env.state)))
                 states_after_action[current_player].append(next_state)
                 current_agent, waiting_agent = waiting_agent, current_agent
             # Compute state values (The states are the results of actions.)
@@ -58,9 +59,9 @@ def data_generator(batch_size, agent: Agent, opponents, model, gamma=0.92, move_
             values[1][-1] += outcome * 10
 
             # Add estimates of the new states to every but the last states (=> [:-1])
-            flipped_states = [[env.flip_board(state) for state in states_after_action[i][:-1]] for i in range(2)]
-            possible_states = [[[np.reshape(env.get_board_after_action(action, state), newshape=(32,)) for action in
-                                 env.get_available_actions(state)] for state in flipped_states[i]] for i in range(2)]
+            flipped_states = [[flip_board(state) for state in states_after_action[i][:-1]] for i in range(2)]
+            possible_states = [[[np.reshape(get_board_after_action(action, state), newshape=(32,)) for action in
+                                 get_available_actions(state)] for state in flipped_states[i]] for i in range(2)]
             estimates = [
                 [np.reshape(model.predict(encode_states(x, ARCHITECTURE)), newshape=(-1,)) for x in possible_states[i]]
                 for

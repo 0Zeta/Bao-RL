@@ -1,9 +1,9 @@
 from random import choice, randint
 
-import numpy as np
 from scipy.special import softmax
 
 from bao_game.envs.bao_env import BaoEnv
+from bao_game.envs.bao_utils import *
 from bao_game.rl.model import encode_states
 
 
@@ -54,7 +54,7 @@ class MostStonesAgent(Agent):
         max_action = available_actions[0]
         max_stones = 0
         for action in available_actions:
-            row, field = BaoEnv.get_coordinates(action)
+            row, field = get_coordinates(action)
             if game_state[row][field] > max_stones:
                 max_action = action
                 max_stones = game_state[row][field]
@@ -64,23 +64,21 @@ class MostStonesAgent(Agent):
 class SimpleRLAgent(Agent):
     """a simple rl agent that doesn´t look at future moves"""
 
-    def __init__(self, model, exploration_rate, env):
+    def __init__(self, model, exploration_rate):
         """
         Arguments:
             model (Model):            the model to use for predictions
             exploration_rate (float): the probability to choose a random move
-            env (BaoEnv):          a game environment
         """
         self.model = model
         self.exploration_rate = exploration_rate
-        self.env = env
 
     def move(self, game_state, available_actions):
         if randint(0, 100) <= self.exploration_rate * 100:
             return choice(available_actions)
         else:
             possible_states = np.reshape(
-                np.asarray([self.env.get_board_after_action(action, game_state) for action in available_actions],
+                np.asarray([get_board_after_action(action, game_state) for action in available_actions],
                            dtype=np.int), newshape=(-1, 32))
             estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test2')), newshape=(-1,))
             probabilities = softmax(estimated_values)
@@ -104,7 +102,6 @@ class MinimaxRLAgent(Agent):
         self.exploration_rate = exploration_rate
         self.min_prob = min_prob
         self.choose_highest_rated_move = choose_highest_rated_move
-        self.env = BaoEnv()
 
     def move(self, game_state, available_actions):
         if randint(0, 100) <= self.exploration_rate * 100:
@@ -112,7 +109,7 @@ class MinimaxRLAgent(Agent):
         quickly_estimated_action_values = self._get_estimated_action_values(game_state)
         estimated_probabilities = softmax(quickly_estimated_action_values)
         estimated_values = np.asarray([self._get_state_value(
-            self.env.flip_board(self.env.get_board_after_action(action, game_state)), prob, False,
+            flip_board(get_board_after_action(action, game_state)), prob, False,
             -99999999, 99999999, min_prob=self.min_prob, depth=0) for
             action, prob in zip(available_actions, estimated_probabilities)])
         if self.choose_highest_rated_move:
@@ -129,7 +126,7 @@ class MinimaxRLAgent(Agent):
             ndarray: the estimated values of all actions possible in the specified state
         """
         possible_states = np.reshape(np.asarray(
-            [self.env.get_board_after_action(action, state) for action in self.env.get_available_actions(state)],
+            [get_board_after_action(action, state) for action in get_available_actions(state)],
             dtype=np.int), newshape=(-1, 32))
         estimated_values = np.reshape(self.model.predict(encode_states(possible_states, 'test2')), newshape=(-1,))
         return estimated_values
@@ -155,8 +152,8 @@ class MinimaxRLAgent(Agent):
         if maximizes:
             best_val = -1000000
             for i, child_state in enumerate(
-                    [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
-                     self.env.get_available_actions(state)]):
+                    [flip_board(get_board_after_action(action, state)) for action in
+                     get_available_actions(state)]):
                 child_prob = prob * estimated_probabilities[i]
                 if child_prob < min_prob:
                     value = estimated_action_values[i]
@@ -171,8 +168,8 @@ class MinimaxRLAgent(Agent):
         else:
             best_val = 1000000
             for i, child_state in enumerate(
-                    [self.env.flip_board(self.env.get_board_after_action(action, state)) for action in
-                     self.env.get_available_actions(state)]):
+                    [flip_board(get_board_after_action(action, state)) for action in
+                     get_available_actions(state)]):
                 child_prob = prob * estimated_probabilities[i]
                 if child_prob < min_prob:
                     value = estimated_action_values[i]
