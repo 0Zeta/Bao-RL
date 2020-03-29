@@ -61,7 +61,7 @@ def execute_action(action, state):
     return state
 
 
-def check_winning_condition(state=None, current_player=None):
+def check_winning_condition(state, current_player):
     """checks whether the game has ended yet
     Arguments:
         state (ndarray):      the current board state
