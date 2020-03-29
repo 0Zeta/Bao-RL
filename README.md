@@ -4,7 +4,7 @@ This was a hobby project by @Dave-Frank-419 and me to explore the topic of deep 
 We decided to tackle the mancala game Bao la kujifunza, a simple variant of Bao which is played on a board with 4x8 pits.
 ![bao_board](https://user-images.githubusercontent.com/9535190/77852183-861d4e00-71dd-11ea-9ced-74e93a2b4414.jpg)
 In this variant there are 2 stones in each of the pits at the start of the game. The game rules can be found in the
-[Wikipedia article](https://en.wikipedia.org/wiki/Bao_(game\)), though we modified them a bit. For example our implementation
+[Wikipedia article](https://en.wikipedia.org/wiki/Bao_(game)), though we modified them a bit. For example our implementation
 only allows clockwise sowing. It is apparent that our game variant doesn't allow nearly as much strategic depth as the more
 complex variants of this game, but we just wanted a simple game to test the concepts and some algorithms of this field.
 ## Our approach
